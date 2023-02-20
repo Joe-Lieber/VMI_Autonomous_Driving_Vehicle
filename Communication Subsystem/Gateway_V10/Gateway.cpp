@@ -3,6 +3,7 @@
 #include "w5100mod.h"  // Adapted from Ethernet library, adds access to socket IR registers
 #include <avr/wdt.h>
 
+
 const int ETHERNET_INT = 2;// Interrupt pin used by ethernet shield
 
 
