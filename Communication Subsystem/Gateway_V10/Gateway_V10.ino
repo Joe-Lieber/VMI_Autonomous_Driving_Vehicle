@@ -1,6 +1,7 @@
 #include "Gateway.h"
 #include <avr/wdt.h>
 
+
 void setup() {
   initialize();
   initializeEthernet();

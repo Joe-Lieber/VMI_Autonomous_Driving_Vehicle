@@ -33,11 +33,11 @@ char throttle_braking_buffer[UDP_TX_PACKET_MAX_SIZE] = "";  // Used for outgoing
 ////////clears the SIR registers so another interrupt can be triggered////////////////////////////////////////////////////////////////////
 
 
-void clearSIRs() {  // After a socket IR, SnIR and SIR need to be reset
+void clearSIRs() {              // After a socket IR, SnIR and SIR need to be reset
   for (int i = 0; i < 8; i++) {
-    W5100.writeSnIR(i, 0xFF);  // Clear socket i interrupt
+    W5100.writeSnIR(i, 0xFF);   // Clear socket i interrupt
   }
-  W5100.writeSIR(0xFF);  // Clear SIR
+  W5100.writeSIR(0xFF);         // Clear SIR
 }
 
 
