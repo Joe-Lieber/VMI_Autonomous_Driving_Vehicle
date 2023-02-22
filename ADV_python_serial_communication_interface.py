@@ -15,49 +15,49 @@ ser.isOpen()
 
 def on_press(key):
     if key.name == 'w':
-        SteeringMessage = SteeringMessage + "00001"
+        SteeringMessage = SteeringMessage + "000001"
         ser.write(SteeringMessage)
         print('w was written to serial')
 
     elif key.name == 'a':
-        SteeringMessage = SteeringMessage + "5DC01" #Note, this does not compensate for the negative number yet
+        SteeringMessage = SteeringMessage + "FA2401" #Note, this does not compensate for the negative number yet
         #How to compensate for the negative number
         ser.write(SteeringMessage)
 
         print('a was written to serial')
 
     elif key.name == 's':
-        SteeringMessage = SteeringMessage + "00001"
+        SteeringMessage = SteeringMessage + "000001"
         ser.write(SteeringMessage)
         print('s was written to serial')
 
     elif key.name == 'd':
-        SteeringMessage = SteeringMessage + "5DC01"
+        SteeringMessage = SteeringMessage + "5DC001"
         ser.write(SteeringMessage)
         print('d was written to serial')
 
     elif key.name == 'q':
-        SteeringMessage = SteeringMessage + "2EE01" #Does not compensate for the negative number
+        SteeringMessage = SteeringMessage + "FD1201" #Does not compensate for the negative number
         ser.write(SteeringMessage)
         print('q was written to serial')
     elif key.name == 'e':
-        SteeringMessage = SteeringMessage + "2EE01"
+        SteeringMessage = SteeringMessage + "2EE001"
         ser.write(SteeringMessage)
         print('e was written to serial')
     elif key.name == '1':
-        SteeringMessage = SteeringMessage + "00001"
+        SteeringMessage = SteeringMessage + "000001"
         ser.write(SteeringMessage)
         print('1 was written to serial')
     elif key.name == '2':
-        SteeringMessage = SteeringMessage + "00001"
+        SteeringMessage = SteeringMessage + "000001"
         ser.write(SteeringMessage)
         print('2 was written to serial')
     elif key.name == '3':
-        SteeringMessage = SteeringMessage + "00001"
+        SteeringMessage = SteeringMessage + "000001"
         ser.write(SteeringMessage)
         print('3 was written to serial')
     elif key.name == 'r':
-        SteeringMessage = SteeringMessage + "00011"
+        SteeringMessage = SteeringMessage + "000011"
         ser.write(SteeringMessage)
         print('r was written to serial')
     elif key.name == 'b':
