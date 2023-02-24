@@ -16,7 +16,16 @@ ser.isOpen()
 
 def on_press(key):
     if key.name == 'w':
-        SteeringMessage = SteeringMessage + "000001"
+
+        #Steering
+        Smode_select = "1"
+        Semergency_reset = "0"
+        Sempty = ""
+        Starget_heading = "0000000000000000"
+
+
+
+        SteeringMessage = SteeringMessage + Smode_select + Semergency_reset + Sempty + Starget_heading
         ser.write(SteeringMessage)
         #Throttle and Breaking
         mode_select = "1"
@@ -33,7 +42,15 @@ def on_press(key):
         print('w was written to serial')
 
     elif key.name == 'a':
-        SteeringMessage = SteeringMessage + "FA2401" #Note, this does compensate for the negative number yet
+       #Steering
+        Smode_select = "1"
+        Semergency_reset = "0"
+        Sempty = ""
+        Starget_heading = "1111101000100100" #-1500
+
+
+
+        SteeringMessage = SteeringMessage + Smode_select + Semergency_reset + Sempty + Starget_heading
 
         #Throttle and Breaking
         mode_select = "1"
@@ -52,8 +69,15 @@ def on_press(key):
         print('a was written to serial')
 
     elif key.name == 's':
-        SteeringMessage = SteeringMessage + "000001"
-        ser.write(SteeringMessage)
+        #Steering
+        Smode_select = "1"
+        Semergency_reset = "0"
+        Sempty = ""
+        Starget_heading = "0000000000000000"
+
+
+
+        SteeringMessage = SteeringMessage + Smode_select + Semergency_reset + Sempty + Starget_heading
 
         #Throttle and Breaking
         mode_select = "1"
@@ -70,8 +94,15 @@ def on_press(key):
         print('s was written to serial')
 
     elif key.name == 'd':
-        SteeringMessage = SteeringMessage + "5DC001"
-        ser.write(SteeringMessage)
+        #Steering
+        Smode_select = "1"
+        Semergency_reset = "0"
+        Sempty = ""
+        Starget_heading = "0000010111011100" #1500
+
+
+
+        SteeringMessage = SteeringMessage + Smode_select + Semergency_reset + Sempty + Starget_heading
         #Throttle and Breaking
         mode_select = "1"
         emergency_reset = "0"
@@ -87,8 +118,15 @@ def on_press(key):
         print('d was written to serial')
 
     elif key.name == 'q':
-        SteeringMessage = SteeringMessage + "FD1201" #Does compensate for the negative number
-        ser.write(SteeringMessage)
+        #Steering
+        Smode_select = "1"
+        Semergency_reset = "0"
+        Sempty = ""
+        Starget_heading = "1111110100010010" #-750
+
+
+
+        SteeringMessage = SteeringMessage + Smode_select + Semergency_reset + Sempty + Starget_heading
         #Throttle and Breaking
         mode_select = "1"
         emergency_reset = "0"
@@ -102,8 +140,15 @@ def on_press(key):
 
         print('q was written to serial')
     elif key.name == 'e':
-        SteeringMessage = SteeringMessage + "2EE001"
-        ser.write(SteeringMessage)
+        #Steering
+        Smode_select = "1"
+        Semergency_reset = "0"
+        Sempty = ""
+        Starget_heading = "0000001011101110"
+
+
+
+        SteeringMessage = SteeringMessage + Smode_select + Semergency_reset + Sempty + Starget_heading
 
         #Throttle and Breaking
         mode_select = "1"
@@ -120,20 +165,48 @@ def on_press(key):
 
         print('e was written to serial')
     elif key.name == '1':
-        SteeringMessage = SteeringMessage + "000001"
-        ser.write(SteeringMessage)
+        #Steering
+        Smode_select = "1"
+        Semergency_reset = "0"
+        Sempty = ""
+        Starget_heading = ""
+
+
+
+        SteeringMessage = SteeringMessage + Smode_select + Semergency_reset + Sempty + Starget_heading
         print('1 was written to serial')
     elif key.name == '2':
-        SteeringMessage = SteeringMessage + "000001"
-        ser.write(SteeringMessage)
+        #Steering
+        Smode_select = "1"
+        Semergency_reset = "0"
+        Sempty = ""
+        Starget_heading = ""
+
+
+
+        SteeringMessage = SteeringMessage + Smode_select + Semergency_reset + Sempty + Starget_heading
         print('2 was written to serial')
     elif key.name == '3':
-        SteeringMessage = SteeringMessage + "000001"
-        ser.write(SteeringMessage)
+       #Steering
+        Smode_select = "1"
+        Semergency_reset = "0"
+        Sempty = ""
+        Starget_heading = ""
+
+
+
+        SteeringMessage = SteeringMessage + Smode_select + Semergency_reset + Sempty + Starget_heading
         print('3 was written to serial')
     elif key.name == 'r':
-        SteeringMessage = SteeringMessage + "000011"
-        ser.write(SteeringMessage)
+        #Steering
+        Smode_select = "1"
+        Semergency_reset = "1"
+        Sempty = ""
+        Starget_heading = ""
+
+
+
+        SteeringMessage = SteeringMessage + Smode_select + Semergency_reset + Sempty + Starget_heading
 
          #Throttle and Breaking
         mode_select = "1"
