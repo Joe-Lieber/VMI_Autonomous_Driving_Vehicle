@@ -65,7 +65,7 @@ int torque_b = 512;           // Value read from torque sensor
 
 // Logic Variables
 int wiggle_room = 1;          // How far from the target the current value can be without correcting
-volatile bool c = false;    // State variable to indicate possible safety violation
+volatile bool EMG = false;    // State variable to indicate possible safety violation
 
 // acceration Variables
 unsigned long previous_acc = 0;       // Variable to keep track of the last time the ouput was incremented
@@ -401,35 +401,35 @@ void feedback() {
 
 
 void debug() {  // Provide feedback to the executive processor about the
-  // Serial.print(millis());
-  // Serial.print(",");
-  // Serial.print(mode_select);
-  // Serial.print(",");
-  // Serial.print(EMG);
-  // Serial.print(",");
-  // Serial.print(EMG_reset);
-  // Serial.print(",");
-  // Serial.print(target_heading);
-  // Serial.print(",");
-  // Serial.print(current_heading);
-  // Serial.print(",");
-  // Serial.print(mid_point);
-  // Serial.print(",");
-  // Serial.print(offset);
-  // Serial.print(",");
-  // Serial.print(current_speed);
-  // Serial.print(",");
-  // Serial.print(current_direction);
-  // Serial.print(",");
-  // Serial.print(torque_a);
-  // Serial.print(",");
-  // Serial.print(torque_b);
-  // Serial.print(",");
-  // Serial.print(wiggle_room);
-  // Serial.print(",");
-  // Serial.print(revolutions);
-  // Serial.println("");
-
-  Serial.print("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",millis,mode_select,EMG,EMG_reset,target_heading,current_heading,mid_point,offset,current_speed,current_direction,torque_a,torque_b,wiggle_room,revolutions);
+  Serial.print(millis());
+  Serial.print(",");
+  Serial.print(mode_select);
+  Serial.print(",");
+  Serial.print(EMG);
+  Serial.print(",");
+  Serial.print(EMG_reset);
+  Serial.print(",");
+  Serial.print(target_heading);
+  Serial.print(",");
+  Serial.print(current_heading);
+  Serial.print(",");
+  Serial.print(mid_point);
+  Serial.print(",");
+  Serial.print(offset);
+  Serial.print(",");
+  Serial.print(current_speed);
+  Serial.print(",");
+  Serial.print(current_direction);
+  Serial.print(",");
+  Serial.print(torque_a);
+  Serial.print(",");
+  Serial.print(torque_b);
+  Serial.print(",");
+  Serial.print(wiggle_room);
+  Serial.print(",");
+  Serial.print(revolutions);
   Serial.println("");
+
+  //Serial.print("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",millis(),mode_select,EMG_reset,target_heading,current_heading,mid_point,offset,current_speed,current_direction,torque_a,torque_b,wiggle_room,revolutions);
+  //Serial.println("");
   }
