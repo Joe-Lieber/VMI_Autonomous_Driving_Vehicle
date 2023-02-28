@@ -32,6 +32,6 @@ void loop() {
   
   feedback();
   
-  //debug();
+  debug();
 
 }

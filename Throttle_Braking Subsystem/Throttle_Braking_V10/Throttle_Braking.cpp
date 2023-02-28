@@ -443,7 +443,7 @@ void debug() {/*
   Serial.print("  ");
   Serial.print(target_throttle_switch);
   Serial.print("  ");*/
-  Serial.print("Target Brake pwm / Switch: ");
+  /*Serial.print("Target Brake pwm / Switch: ");
   Serial.print(target_brake_pwm);
   Serial.print("  ");
   Serial.print(target_brake_switch);
@@ -457,5 +457,24 @@ void debug() {/*
   Serial.print(current_brake_pwm);
   Serial.print("  ");
   Serial.print(current_brake_switch);
-  Serial.println("");
+  Serial.println("");*/
+  /*char debugthbk[200];
+        sprintf(debugthbk,"%s, %s, %s, %s, %d, %d, %s, %s, %d, %d, %s, %s, %d, %d, %s, %d, %d",
+                mode_select, EMG_reset, target_throttle_switch, target_brake_switch, target_throttle_pwm, target_brake_pwm,
+                current_throttle_switch, current_brake_switch, current_throttle_pwm, current_brake_pwm,
+                throttle_switch, brake_switch, throttle_sensor, brake_sensor,
+                EMG,
+                previous_acc, previous_feedback
+                );
+        Serial.print(debugthbk);*/
+
+
+  Serial.println(
+                String(mode_select) + ", " + String(EMG_reset) + ", " + String(target_throttle_switch) + ", " + String(target_brake_switch) +", " + String(target_throttle_pwm) + ", " + String(target_brake_pwm) +
+                 ", " + String(current_throttle_switch) + ", " + String(current_brake_switch) + ", " + String(current_throttle_pwm) + ", " + String(current_brake_pwm) + ", " + 
+                String(throttle_switch) + ", " + String(brake_switch) + ", " + String(throttle_sensor) + ", " + String(brake_sensor) + ", " +
+                String(EMG) + ", " +
+                String(previous_acc) + ", " + String(previous_feedback)
+                );
+
 }
