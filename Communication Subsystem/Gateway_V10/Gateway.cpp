@@ -66,7 +66,7 @@ void ethernetFlag() {
 void initialize() {
   Serial.begin(9600);
   Serial.println("Initializing server....");
-  wdt_enable(WDTO_1S);  // Eneable the watchdog timer to execute an interrupt if it reaches 1 second
+  //wdt_enable(WDTO_1S);  // Eneable the watchdog timer to execute an interrupt if it reaches 1 second
 }
 
 
@@ -165,16 +165,7 @@ void readEthernet() {
 
 // BARKER MAKE THIS WORK :(((((
 void errorCheck() {
-  /*for (int i = 0; i < 100; i++) {
-    if (Throttole_Breaking[i] != feedbackState[i]) {
-      Throttole_Breaking[i] = 0; //
-      Serial.println("ERROR: Current state does not match expected state");
-      Serial.println("Logging error for further analasys");
-    }
-    else {
-      Serial.println("Error check complete, PASSES");
-    }
-  }*/
+
 }
 
 
@@ -217,7 +208,7 @@ void serialHandle() {
     id_str[used_chars] = incoming[used_chars];
     id = strtoul(id_str, NULL, 16);
 
-    if (id == 0) {
+    if (id == 0) { //steering
       strcpy(null_data,data);
       for (i = used_chars; i < used_chars + 5; i++) {
         data[i - used_chars] = incoming[i];
@@ -226,7 +217,7 @@ void serialHandle() {
       strcpy(data,steering_packet);
     }
 
-    if (id == 1) {
+    if (id == 1) { // Throttle Braking
       strcpy(null_data,data);
       for (i = used_chars; i < used_chars + 6; i++) {
         data[i - used_chars] = incoming[i];
@@ -236,4 +227,60 @@ void serialHandle() {
     }
   }
   sendEthernet();
+}
+
+
+char wtb[6] = { "0" "0" "0" "8" "3" "B" };
+//char wtb[6] = { "0" "0" "0" "F" "1" "B" };
+//char wtb[6] = { "0" "0" "1" "9" "1" "B" };
+
+char adtb[6] = { "0" "0" "0" "8" "3" "B" };
+//char adtb[6] = { "0" "0" "0" "A" "1" "B" };
+//char adtb[6] = { "0" "0" "0" "F" "1" "B" };
+
+char qetb[6] = { "0" "0" "0" "8" "3" "B" };
+//char qetb[6] = "000C9B";
+//char qetb[6] = "0012DB";
+
+char stb[6] = { "1" "F" "E" "0" "0" "3" };
+
+char ss[5] = { "0" "0" "0" "0" "3" };
+char ws[5] = { "0" "0" "0" "0" "3" };
+char as[5] = { "7" "D" "1" "2" "3" };
+char ds[5] = { "0" "2" "E" "E" "3" };
+char qs[5] = { "7" "E" "8" "9" "3" };
+char es[5] = { "0" "1" "7" "7" "3" };
+
+    
+void debug(){
+  if (Serial.available()){
+    Serial.print(".");
+    char x = Serial.read();
+
+    if (x == 's'){
+      strcpy(ss,steering_packet);
+      strcpy(stb,throttle_braking_packet);
+    }
+    else if (x == 'w'){
+      //strcpy(ws,steering_packet);
+      strcpy(throttle_braking_packet,"00083B");
+    }
+    else if (x == 'a'){
+      strcpy(as,steering_packet);
+      strcpy(adtb,throttle_braking_packet);
+    }
+    else if (x == 'd'){
+      strcpy(ds,steering_packet);
+      strcpy(adtb,throttle_braking_packet);
+    }
+    else if (x == 'e'){
+      strcpy(es,steering_packet);
+      strcpy(qetb,throttle_braking_packet);
+    }
+    else if (x == 'q'){
+      strcpy(qs,steering_packet);
+      strcpy(qetb,throttle_braking_packet);
+    }
+    sendEthernet();
+  }
 }

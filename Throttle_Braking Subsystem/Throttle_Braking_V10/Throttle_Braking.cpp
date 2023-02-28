@@ -273,7 +273,7 @@ void readEthernet() {
 
     if(EMG_reset){                              // If the emergency reset bit is high, reset the EMG variable
       EMG = false;
-      EMG_RESET = false;
+      EMG_reset = false;
     }
 
     ethernet_flag = 0;                          // Reset the ethernet flag so that the next interrupt can set it
