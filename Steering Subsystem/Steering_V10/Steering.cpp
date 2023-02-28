@@ -34,7 +34,8 @@ const int FEEDBACK_PERIOD = 1000;// Amount of time in [mS] between feedback mess
 //Message strcture: [Target Heading(16 bits), Empty(2 bit), Emergency Reset(1 bit), Mode Select(1 bit)] <<read right to left/////
 const int MODE_SELECT_SHIFT = 0;    // Shift vector for mode_select
 const int EMG_RESET_SHIFT = 1;      // Shift vector for EMG_reset
-const int TARGET_HEADING_SHIFT = 4; // Shift vector for target_heading
+const int EMG_SHIFT = 2;             // Shift vector for EMG
+const int TARGET_HEADING_SHIFT = 3; // Shift vector for target_heading
 
 const int MASK_1 = 0x1;             // Mask for 1 bit variables
 const int MASK_16 = 0xFFFF;         // Mask for 16 bit variables
@@ -237,7 +238,8 @@ void readEthernet() {
 
     mode_select = (recieved >> MODE_SELECT_SHIFT) & MASK_1;         // Parse recieved[0] for mode_select
     EMG_reset = (recieved >> EMG_RESET_SHIFT) & MASK_1;             // Parse recieved[1] for EMG_reset
-    target_heading = (recieved >> TARGET_HEADING_SHIFT) & MASK_16;  // Parse recieved[4:19] for target_heading
+    EMG |= (recieved >> EMG_SHIFT) & MASK_1;                        // Parse recieved[2] for EMG
+    target_heading = (recieved >> TARGET_HEADING_SHIFT) & MASK_16;  // Parse recieved[3:18] for target_heading
     
     if (target_heading > current_heading) {
       mid_point = current_heading - ((current_heading - target_heading) / 2);  // Calculate the midpoint with the new target
@@ -245,6 +247,11 @@ void readEthernet() {
     } else {
       mid_point = current_heading + ((target_heading - current_heading) / 2);  // Calculate the midpoint with the new target
       offset = (current_heading - target_heading) / 20;                        // Calculate the offset with the new target
+    }
+    
+    if(EMG_reset){        // If the emergency reset bit is high, reset the EMG variable
+      EMG = false;
+      EMG_reset = false;
     }
     
     ethernet_flag = 0;  // Reset the ethernet flag so that the next interrupt can set it
@@ -310,8 +317,6 @@ void EMGaction() {
 
 
 void decideAction() {  // Make a decsion based on the target and current values
-
-
   if (current_heading < target_heading - wiggle_room) {
     wiggle_room = 1;    
     if (current_heading < mid_point - offset) {
