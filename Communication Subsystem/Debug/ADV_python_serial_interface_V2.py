@@ -4,7 +4,7 @@ from pynput import keyboard
 ########################################################################################################################
 
 ser = serial.Serial(
-    port='/dev/ttyACM0',
+    port='COM6',
     baudrate=9600,
     parity=serial.PARITY_ODD,
     stopbits=serial.STOPBITS_TWO,
@@ -42,7 +42,7 @@ flag = 0x0                     # Logic flag to send one command per key hold
 mode_select = 0x0              # Initialize mode to manual
 emergency_reset = 0x0          # Do not reset emergency until ordered
 
-throttle_f = THROTTLE_1        # Current throttle value for forward
+throttle_w = THROTTLE_1        # Current throttle value for forward
 throttle_q_e = THROTTLE_1      # Current throttle value for soft turns
 throttle_a_d = THROTTLE_1      # Current throttle value for hard turns
 emergency = 0x0                # No emergency in the syswtem
@@ -54,7 +54,7 @@ current_brake_pwm = 0x0        # initialize to ON
 
 #########################################################################################################################
 
-def buildSteering( MODE_SELECT, EMERGENCY_RESET, EMERGENCY, TARGET_HEADING):
+def buildSteering( ID, MODE_SELECT, EMERGENCY_RESET, EMERGENCY, TARGET_HEADING):
     global mode_select
     global emergency
     global current_heading
@@ -66,7 +66,8 @@ def buildSteering( MODE_SELECT, EMERGENCY_RESET, EMERGENCY, TARGET_HEADING):
     packet = (packet << 1) | EMERGENCY
     packet = (packet << 1) | EMERGENCY_RESET
     packet = (packet << 1) | MODE_SELECT
-    packet = str(hex(packet))
+    packet = (packet << 4) | ID
+    packet = format(packet, 'x').zfill(6)
     return packet
 
 ##########################################################################################################################
@@ -93,13 +94,13 @@ def buildThrottleBraking( ID, MODE_SELECT,  EMERGENCY_RESET, EMERGENCY, TARGET_T
     packet = (packet << 1) | EMERGENCY_RESET
     packet = (packet << 1) | MODE_SELECT
     packet = (packet << 4) | ID
-    packet = str(hex(packet))
+    packet = format(packet, 'x').zfill(7)
     return packet
 
 ##########################################################################################################################
 
 def on_press(key):
-    global throttle_f      # Current throttle value for forward
+    global throttle_w      # Current throttle value for forward
     global throttle_q_e    # Current throttle value for soft turns
     global throttle_a_d    # Current throttle value for hard turns
     global flag
@@ -118,57 +119,63 @@ def on_press(key):
         elif key.char == 's':                   # Stop the Vehicle, SECOND PRIORITY
             ser.write(buildSteering(mode_select, emergency_reset, emergency, current_heading))
             ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x0, 0x0, BRAKE))
+            print(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, current_heading))
+            print(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x0, 0x0, BRAKE))
             print('s Pressed')
         
         elif key.char == 'w':                   # Move forward
             ser.write(buildSteering(mode_select, emergency_reset, emergency, CENTER))
-            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_f, 0x0))
+            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_w, 0x0))
+            print(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, CENTER))
+            print(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_w, 0x0))
             print('w Pressed')
 
         elif key.char == 'a':                   # Move Left
-            ser.write(buildSteering(mode_select, emergency_reset, emergency, HARD_LEFT))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, HARD_LEFT))
             ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_a_d, 0x0))
             print('a Pressed')
 
         elif key.char == 'd':                   # Move Right
             ser.write(buildSteering(mode_select, emergency_reset, emergency, HARD_RIGHT))
             ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_a_d, 0x0))
+            print(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, HARD_RIGHT))
+            print(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_a_d, 0x0))
             print('d Pressed')
 
         elif key.char == 'q':                   # Soft left
-            ser.write(buildSteering(mode_select, emergency_reset, emergency, SOFT_LEFT))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, SOFT_LEFT))
             ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_q_e, 0x0))
             print('q Pressed')
 
         elif key.char == 'e':                   # Soft Right
-            ser.write(buildSteering(mode_select, emergency_reset, emergency, SOFT_RIGHT))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, SOFT_RIGHT))
             ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_q_e, 0x0))
             print('e Pressed')
 
         elif key.char == 'r':                   # Reset the Emergency stop bit
-            ser.write(buildSteering(mode_select, 0x1, emergency, current_heading))
+            ser.write(buildSteering(STEERING_ID, mode_select, 0x1, emergency, current_heading))
             ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, 0x1, emergency, current_throttle_switch, current_brake_switch, current_throttle_pwm, current_brake_pwm))
             print('r Pressed')
 
         elif key.char == 'm':                   # Internally Flip the mode select bit
-            ser.write(buildSteering(not mode_select, emergency_reset, emergency, current_heading))
+            ser.write(buildSteering(STEERING_ID, not mode_select, emergency_reset, emergency, current_heading))
             ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, not mode_select, emergency_reset, emergency, current_throttle_switch, current_brake_switch, current_throttle_pwm, current_brake_pwm))
             print('m Pressed')
 
         elif key.char == '1':              # Internally update Throttle Values
-            throttle_f = THROTTLE_1        # Current throttle value for forward
+            throttle_w = THROTTLE_1        # Current throttle value for forward
             throttle_q_e = THROTTLE_1      # Current throttle value for soft turns
             throttle_a_d = THROTTLE_1      # Current throttle value for hard turns
             print('1 Pressed')
             
         elif key.char == '2':              # Internally update Throttle Values
-            throttle_f = THROTTLE_2        # Current throttle value for forward
+            throttle_w = THROTTLE_2        # Current throttle value for forward
             throttle_q_e = SOFT_TURN_2     # Current throttle value for soft turns
             throttle_a_d = HARD_TURN_2     # Current throttle value for hard turns
             print('2 Pressed')
 
         elif key.char == '3':              # Internally update Throttle Values
-            throttle_f = THROTTLE_3        # Current throttle value for forward
+            throttle_w = THROTTLE_3        # Current throttle value for forward
             throttle_q_e = SOFT_TURN_3     # Current throttle value for soft turns
             throttle_a_d = HARD_TURN_3     # Current throttle value for hard turns
             print('3 Pressed')
@@ -185,28 +192,28 @@ def on_release(key):
     try:
         
         if key.char == 'w':                   # Move forward
-            ser.write(buildSteering(mode_select, emergency_reset, emergency, CENTER))
-            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x1, 0x0 0x0))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, CENTER))
+            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x1, 0x0, 0x0))
             print('w Released')
 
         elif key.char == 'a':                   # Move Left
-            ser.write(buildSteering(mode_select, emergency_reset, emergency, HARD_LEFT))
-            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x1, 0x0 0x0))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, HARD_LEFT))
+            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x1, 0x0, 0x0))
             print('a Released')
 
         elif key.char == 'd':                   # Move Right
-            ser.write(buildSteering(mode_select, emergency_reset, emergency, HARD_RIGHT))
-            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x1, 0x0 0x0))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, HARD_RIGHT))
+            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x1, 0x0, 0x0))
             print('d Released')
 
         elif key.char == 'q':                   # Soft left
-            ser.write(buildSteering(mode_select, emergency_reset, emergency, SOFT_LEFT))
-            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x1, 0x0 0x0))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, SOFT_LEFT))
+            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x1, 0x0, 0x0))
             print('q Released')
 
         elif key.char == 'e':                   # Soft Right
-            ser.write(buildSteering(mode_select, emergency_reset, emergency, SOFT_RIGHT))
-            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x1, 0x0 0x0))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, SOFT_RIGHT))
+            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x1, 0x0, 0x0))
             print('e Released')
 
     except AttributeError:
