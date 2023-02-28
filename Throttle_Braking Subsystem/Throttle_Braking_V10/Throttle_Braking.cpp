@@ -35,10 +35,11 @@ const int FEEDBACK_PERIOD = 1000;            // Amount of time in [mS] between f
 //Message strcture: [Brake Switch(4 bits), Brake pwm(8 bits), Throttle Switch(4 bits), Throttle pwm(8 bits), EMPTY(2 bit), Emergency Reset(1 bit), Mode Select(1 bits)] <<read right to left/////
 const int MODE_SELECT_SHIFT = 0;      // Shift vector for mode_select
 const int EMG_RESET_SHIFT  = 1;       // Shift vector for EMG_reset
-const int THROTTLE_PWM_SHIFT = 4;     // Shift vector for throttle_pwm
-const int THROTTLE_SWITCH_SHIFT = 12; // Shift vector for throttle_switch
-const int BRAKE_PWM_SHIFT = 16;       // Shift vector for brake_pwm
-const int BRAKE_SWITCH_SHIFT = 24;    // Shift vector for brake_switch
+const int EMG_SHIFT = 2;              // Shift vector for EMG
+const int THROTTLE_SWITCH_SHIFT = 3;  // Shift vector for throttle_switch
+const int BRAKE_SWITCH_SHIFT = 4;     // Shift vector for brake_switch
+const int THROTTLE_PWM_SHIFT = 5;     // Shift vector for throttle_pwm
+const int BRAKE_PWM_SHIFT = 13;       // Shift vector for brake_pwm
 
 const int MASK_1 = 0x1;               // Mask for 1 bit variables
 const int MASK_8 = 0xFF;              // Mask for 8 bit variables
@@ -236,10 +237,11 @@ void readEthernet() {
 
     mode_select = (recieved >> MODE_SELECT_SHIFT) & MASK_1;                 // Parse recieved[0] for mode_select
     EMG_reset = (recieved >> EMG_RESET_SHIFT) & MASK_1;                     // Parse recieved[1] for EMG_reset
-    target_throttle_pwm = (recieved >> THROTTLE_PWM_SHIFT) & MASK_8;        // Parse recieved[4:11] for target_throttle_pwm
-    target_throttle_switch = (recieved >> THROTTLE_SWITCH_SHIFT) & MASK_1;  // Parse recieved[12:15] for target_throttle_switch
-    target_brake_pwm = (recieved >> BRAKE_PWM_SHIFT) & MASK_8;              // Parse recieved[16:23] for target_brake_pwm
-    target_brake_switch = (recieved >> BRAKE_SWITCH_SHIFT) & MASK_1;        // Parse recieved[24:27] for target_brake_switch
+    EMG = (recieved >> EMG_SHIFT) & MASK_1;                                 // Parse recieved[2] for EMG_reset
+    target_throttle_switch = (recieved >> THROTTLE_SWITCH_SHIFT) & MASK_1;  // Parse recieved[4] for target_throttle_switch
+    target_brake_switch = (recieved >> BRAKE_SWITCH_SHIFT) & MASK_1;        // Parse recieved[5] for target_brake_switch
+    target_throttle_pwm = (recieved >> THROTTLE_PWM_SHIFT) & MASK_8;        // Parse recieved[6:13] for target_throttle_pwm
+    target_brake_pwm = (recieved >> BRAKE_PWM_SHIFT) & MASK_8;              // Parse recieved[14:21] for target_brake_pwm
     
     if (target_brake_pwm < V0_5) {              // Check Low side target_brake_pwm
       target_brake_pwm = V0_5;
@@ -267,6 +269,11 @@ void readEthernet() {
     }
     if (current_throttle_pwm > V4_5) {
       current_throttle_pwm = V4_5;              // Check High side current_throttle_pwm
+    }
+
+    if(EMG_reset){                              // If the emergency reset bit is high, reset the EMG variable
+      EMG = false;
+      EMG_reset = false;
     }
 
     ethernet_flag = 0;                          // Reset the ethernet flag so that the next interrupt can set it
@@ -437,22 +444,22 @@ void debug() {/*
   Serial.print("  ");
   Serial.print("Emergency Reset: ");
   Serial.print(EMG_reset);
-  Serial.print("  ");
+  Serial.print("  ");*/
   Serial.print("Target Throttle pwm / Switch: ");
   Serial.print(target_throttle_pwm);
   Serial.print("  ");
   Serial.print(target_throttle_switch);
-  Serial.print("  ");*/
+  Serial.print("  ");
   Serial.print("Target Brake pwm / Switch: ");
   Serial.print(target_brake_pwm);
   Serial.print("  ");
   Serial.print(target_brake_switch);
   Serial.print("  ");
-  //Serial.print("Current Throttle pwm / Switch: ");
-  //Serial.print(current_throttle_pwm);
-  //Serial.print("  ");
-  //Serial.print(current_throttle_switch);
-  //Serial.print("  ");
+  Serial.print("Current Throttle pwm / Switch: ");
+  Serial.print(current_throttle_pwm);
+  Serial.print("  ");
+  Serial.print(current_throttle_switch);
+  Serial.print("  ");
   Serial.print("Current Brake pwm / Switch: ");
   Serial.print(current_brake_pwm);
   Serial.print("  ");

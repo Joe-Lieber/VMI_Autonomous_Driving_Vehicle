@@ -7,5 +7,6 @@ void initializeInterrupt();
 
 void readEthernet();
 void serialHandle();
+void debug();
 
 #endif
