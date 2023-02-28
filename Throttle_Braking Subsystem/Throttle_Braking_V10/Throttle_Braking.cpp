@@ -444,22 +444,22 @@ void debug() {/*
   Serial.print("  ");
   Serial.print("Emergency Reset: ");
   Serial.print(EMG_reset);
-  Serial.print("  ");
+  Serial.print("  ");*/
   Serial.print("Target Throttle pwm / Switch: ");
   Serial.print(target_throttle_pwm);
   Serial.print("  ");
   Serial.print(target_throttle_switch);
-  Serial.print("  ");*/
+  Serial.print("  ");
   Serial.print("Target Brake pwm / Switch: ");
   Serial.print(target_brake_pwm);
   Serial.print("  ");
   Serial.print(target_brake_switch);
   Serial.print("  ");
-  //Serial.print("Current Throttle pwm / Switch: ");
-  //Serial.print(current_throttle_pwm);
-  //Serial.print("  ");
-  //Serial.print(current_throttle_switch);
-  //Serial.print("  ");
+  Serial.print("Current Throttle pwm / Switch: ");
+  Serial.print(current_throttle_pwm);
+  Serial.print("  ");
+  Serial.print(current_throttle_switch);
+  Serial.print("  ");
   Serial.print("Current Brake pwm / Switch: ");
   Serial.print(current_brake_pwm);
   Serial.print("  ");

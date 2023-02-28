@@ -81,26 +81,29 @@ void initializeEthernet() {
   Serial.println("Initializing Ethernet...");  // Print that the Ethernet connection is starting
   Ethernet.begin(mac, ip);                     // Begin ethernet connection
 
-  // Check for Ethernet hardware present
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {       // Check for Ethernet hardware being present
     Serial.println("Ethernet shield was not found");           // If it is missing, print to serial monitor
     while (Ethernet.hardwareStatus() == EthernetNoHardware) {  // While the Hardware is missing
       delay(1000);                                             // wait for 1 second
       Serial.print(".");                                       // and print a dot to the serial monitor
     }
-    if (Ethernet.linkStatus() == LinkOFF) {                // Check to see if there is a physical connection to the network
-      Serial.println("Ethernet cable is not connected.");  // if there is not then print it to the serial monitor
-      while (Ethernet.linkStatus() == LinkOFF) {           // while there is no connection
-        delay(1000);                                       // wait for 1 second
-        Serial.print(".");                                 // and print a dot to the serial monitor
-      }
-    }
-    // start UDP
-    Udp1.begin(port1);  // start the UDP connection on the port declared
-    Udp2.begin(port2);  // start the UDP connection on the port declared
-
-    Serial.println("Ethernet Initialized");  // print to the serial monitor that the ethernet is done initializing
   }
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  if (Ethernet.linkStatus() == LinkOFF) {                // Check to see if there is a physical connection to the network
+    Serial.println("Ethernet cable is not connected.");  // if there is not then print it to the serial monitor
+    while (Ethernet.linkStatus() == LinkOFF) {           // while there is no connection
+      delay(1000);                                       // wait for 1 second
+      Serial.print(".");                                 // and print a dot to the serial monitor
+    }
+  }
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  
+  // start UDP
+  Udp1.begin(port1);  // start the UDP connection on the port declared
+  Udp2.begin(port2);  // start the UDP connection on the port declared
+
+  Serial.println("Ethernet Initialized");  // print to the serial monitor that the ethernet is done initializing
 }
 
 
@@ -165,7 +168,6 @@ void readEthernet() {
 
 // BARKER MAKE THIS WORK :(((((
 void errorCheck() {
-
 }
 
 
@@ -208,78 +210,117 @@ void serialHandle() {
     id_str[used_chars] = incoming[used_chars];
     id = strtoul(id_str, NULL, 16);
 
-    if (id == 0) { //steering
-      strcpy(null_data,data);
+    if (id == 0) {  //steering
+      strcpy(null_data, data);
       for (i = used_chars; i < used_chars + 5; i++) {
         data[i - used_chars] = incoming[i];
       }
       used_chars = used_chars + 5;
-      strcpy(data,steering_packet);
+      strcpy(data, steering_packet);
     }
 
-    if (id == 1) { // Throttle Braking
-      strcpy(null_data,data);
+    if (id == 1) {  // Throttle Braking
+      strcpy(null_data, data);
       for (i = used_chars; i < used_chars + 6; i++) {
         data[i - used_chars] = incoming[i];
       }
       used_chars = used_chars + 6;
-      strcpy(data,throttle_braking_packet);
+      strcpy(data, throttle_braking_packet);
     }
   }
   sendEthernet();
 }
 
 
-char wtb[6] = { "0" "0" "0" "8" "3" "B" };
+char wtb[6] = { "0"
+                "0"
+                "0"
+                "8"
+                "3"
+                "B" };
 //char wtb[6] = { "0" "0" "0" "F" "1" "B" };
 //char wtb[6] = { "0" "0" "1" "9" "1" "B" };
 
-char adtb[6] = { "0" "0" "0" "8" "3" "B" };
+char adtb[6] = { "0"
+                 "0"
+                 "0"
+                 "8"
+                 "3"
+                 "B" };
 //char adtb[6] = { "0" "0" "0" "A" "1" "B" };
 //char adtb[6] = { "0" "0" "0" "F" "1" "B" };
 
-char qetb[6] = { "0" "0" "0" "8" "3" "B" };
+char qetb[6] = { "0"
+                 "0"
+                 "0"
+                 "8"
+                 "3"
+                 "B" };
 //char qetb[6] = "000C9B";
 //char qetb[6] = "0012DB";
 
-char stb[6] = { "1" "F" "E" "0" "0" "3" };
+char stb[6] = { "1"
+                "F"
+                "E"
+                "0"
+                "0"
+                "3" };
 
-char ss[5] = { "0" "0" "0" "0" "3" };
-char ws[5] = { "0" "0" "0" "0" "3" };
-char as[5] = { "7" "D" "1" "2" "3" };
-char ds[5] = { "0" "2" "E" "E" "3" };
-char qs[5] = { "7" "E" "8" "9" "3" };
-char es[5] = { "0" "1" "7" "7" "3" };
+char ss[5] = { "0"
+               "0"
+               "0"
+               "0"
+               "3" };
+char ws[5] = { "0"
+               "0"
+               "0"
+               "0"
+               "3" };
+char as[5] = { "7"
+               "D"
+               "1"
+               "2"
+               "3" };
+char ds[5] = { "0"
+               "2"
+               "E"
+               "E"
+               "3" };
+char qs[5] = { "7"
+               "E"
+               "8"
+               "9"
+               "3" };
+char es[5] = { "0"
+               "1"
+               "7"
+               "7"
+               "3" };
 
-    
-void debug(){
-  if (Serial.available()){
+
+void debug() {
+  if (Serial.available()) {
     Serial.print(".");
     char x = Serial.read();
 
-    if (x == 's'){
-      strcpy(ss,steering_packet);
-      strcpy(stb,throttle_braking_packet);
-    }
-    else if (x == 'w'){
+    if (x == 's') {
+      strcpy(ss, steering_packet);
+      strcpy(stb, throttle_braking_packet);
+    } else if (x == 'w') {
       //strcpy(ws,steering_packet);
-      strcpy(throttle_braking_packet,"00083B");
-    }
-    else if (x == 'a'){
-      strcpy(as,steering_packet);
-      strcpy(adtb,throttle_braking_packet);
-    }
-    else if (x == 'd'){
-      strcpy(ds,steering_packet);
-      strcpy(adtb,throttle_braking_packet);
-    }
-    else if (x == 'e'){
-      strcpy(es,steering_packet);
-      strcpy(qetb,throttle_braking_packet);
-    }
-    else if (x == 'q'){
-      strcpy(qs,steering_packet);
-      strcpy(qetb,throttle_braking_packet);
+      strcpy(throttle_braking_packet, "00083B");
+    } else if (x == 'a') {
+      strcpy(as, steering_packet);
+      strcpy(adtb, throttle_braking_packet);
+    } else if (x == 'd') {
+      strcpy(ds, steering_packet);
+      strcpy(adtb, throttle_braking_packet);
+    } else if (x == 'e') {
+      strcpy(es, steering_packet);
+      strcpy(qetb, throttle_braking_packet);
+    } else if (x == 'q') {
+      strcpy(qs, steering_packet);
+      strcpy(qetb, throttle_braking_packet);
     }
     sendEthernet();
   }
