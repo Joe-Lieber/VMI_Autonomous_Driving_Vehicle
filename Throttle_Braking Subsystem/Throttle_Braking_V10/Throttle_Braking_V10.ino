@@ -9,6 +9,7 @@ void setup(){
 }
 
 
+
 void loop() {
 
   wdt_reset();
@@ -31,6 +32,6 @@ void loop() {
   
   feedback();
   
-  //debug();
+  debug();
 
 }
