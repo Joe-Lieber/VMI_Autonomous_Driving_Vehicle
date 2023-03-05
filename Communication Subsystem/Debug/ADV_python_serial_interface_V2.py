@@ -4,7 +4,7 @@ from pynput import keyboard
 ########################################################################################################################
 
 ser = serial.Serial(
-    port='COM6',
+    port='/dev/ttyACM0',
     baudrate=9600,
     parity=serial.PARITY_ODD,
     stopbits=serial.STOPBITS_TWO,
@@ -20,15 +20,15 @@ HARD_RIGHT = 0x05DC # 1500
 HARD_LEFT = 0xFA24 # -1500
 CENTER = 0x0 # center is 0
 
-THROTTLE_1 = 0x41 # base value of throttle set to 65
-THROTTLE_2 = THROTTLE_1 * 1.75 # base times multiplier 1.75
-THROTTLE_3 = THROTTLE_1 * 2.5 # base times multiplier 2.5
+THROTTLE_1 = 0x4B # 75
+THROTTLE_2 = 0x96 # 150
+THROTTLE_3 = 0xDC # 220
 
-SOFT_TURN_2 = THROTTLE_1 * 1.4 # base times multiplier 1.4
-SOFT_TURN_3 = THROTTLE_1 * 2 # base times multiplier 2
+SOFT_TURN_2 = 0x7D # 125
+SOFT_TURN_3 = 0xB9 # 185
 
-HARD_TURN_2 = THROTTLE_1 *1.3
-HARD_TURN_3 = THROTTLE_1 *1.7
+HARD_TURN_2 = 0x64 #100
+HARD_TURN_3 = 0x82 #130
 
 BRAKE = 0xFF # brake PWM will always be 255 unless 0
 
@@ -39,7 +39,7 @@ STEERING_ID = 0x0
 
 flag = 0x0                     # Logic flag to send one command per key hold
 
-mode_select = 0x0              # Initialize mode to manual
+mode_select = 0x1              # Initialize mode to manual
 emergency_reset = 0x0          # Do not reset emergency until ordered
 
 throttle_w = THROTTLE_1        # Current throttle value for forward
@@ -62,12 +62,12 @@ def buildSteering( ID, MODE_SELECT, EMERGENCY_RESET, EMERGENCY, TARGET_HEADING):
     emergency = EMERGENCY
     current_heading = TARGET_HEADING
     
-    packet = TARGET_HEADING
+    packet = ID
+    packet = (packet << 16) | TARGET_HEADING
     packet = (packet << 1) | EMERGENCY
     packet = (packet << 1) | EMERGENCY_RESET
     packet = (packet << 1) | MODE_SELECT
-    packet = (packet << 4) | ID
-    packet = format(packet, 'x').zfill(6)
+    packet = str.encode(format(packet, 'x').zfill(6))
     return packet
 
 ##########################################################################################################################
@@ -86,15 +86,15 @@ def buildThrottleBraking( ID, MODE_SELECT,  EMERGENCY_RESET, EMERGENCY, TARGET_T
     current_brake_switch = TARGET_BRAKE_SWITCH
     current_brake_pwm = TARGET_BRAKE_PWM
     
-    packet = TARGET_BRAKE_PWM
+    packet = 0x8
+    packet = (packet << 8) | TARGET_BRAKE_PWM
     packet = (packet << 8) | TARGET_THROTTLE_PWM
     packet = (packet << 1) | TARGET_BRAKE_SWITCH
     packet = (packet << 1) | TARGET_THROTTLE_SWITCH
     packet = (packet << 1) | EMERGENCY
     packet = (packet << 1) | EMERGENCY_RESET
     packet = (packet << 1) | MODE_SELECT
-    packet = (packet << 4) | ID
-    packet = format(packet, 'x').zfill(7)
+    packet = str.encode(format(packet, 'x').zfill(7))
     return packet
 
 ##########################################################################################################################
@@ -112,19 +112,20 @@ def on_press(key):
 
     try:
         if key.char == 'b':                     # trigger the emergency stop functionality, FIRST PRIORITY
-            ser.write(buildSteering(mode_select, emergency_reset, 0x1, current_heading))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, 0x1, current_heading))
             ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, 0x1, 0x0, 0x0, 0x0, BRAKE))
             print('b Pressed')
             
         elif key.char == 's':                   # Stop the Vehicle, SECOND PRIORITY
-            ser.write(buildSteering(mode_select, emergency_reset, emergency, current_heading))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, current_heading))
             ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x0, 0x0, BRAKE))
             print(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, current_heading))
             print(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x0, 0x0, 0x0, BRAKE))
             print('s Pressed')
         
         elif key.char == 'w':                   # Move forward
-            ser.write(buildSteering(mode_select, emergency_reset, emergency, CENTER))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, CENTER))
+            print(emergency_reset)
             ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_w, 0x0))
             print(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, CENTER))
             print(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_w, 0x0))
@@ -136,7 +137,7 @@ def on_press(key):
             print('a Pressed')
 
         elif key.char == 'd':                   # Move Right
-            ser.write(buildSteering(mode_select, emergency_reset, emergency, HARD_RIGHT))
+            ser.write(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, HARD_RIGHT))
             ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_a_d, 0x0))
             print(buildSteering(STEERING_ID, mode_select, emergency_reset, emergency, HARD_RIGHT))
             print(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, emergency_reset, emergency, 0x1, 0x1, throttle_a_d, 0x0))
@@ -153,13 +154,17 @@ def on_press(key):
             print('e Pressed')
 
         elif key.char == 'r':                   # Reset the Emergency stop bit
-            ser.write(buildSteering(STEERING_ID, mode_select, 0x1, emergency, current_heading))
-            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, 0x1, emergency, current_throttle_switch, current_brake_switch, current_throttle_pwm, current_brake_pwm))
+            ser.write(buildSteering(STEERING_ID, mode_select, 0x1, 0x0, current_heading))
+            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, mode_select, 0x1, 0x0, current_throttle_switch, current_brake_switch, current_throttle_pwm, current_brake_pwm))
             print('r Pressed')
 
         elif key.char == 'm':                   # Internally Flip the mode select bit
-            ser.write(buildSteering(STEERING_ID, not mode_select, emergency_reset, emergency, current_heading))
-            ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, not mode_select, emergency_reset, emergency, current_throttle_switch, current_brake_switch, current_throttle_pwm, current_brake_pwm))
+            if mode_select == 1:
+                ser.write(buildSteering(STEERING_ID, 0x0, emergency_reset, emergency, current_heading))
+                ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, 0x0, emergency_reset, emergency, current_throttle_switch, current_brake_switch, current_throttle_pwm, current_brake_pwm))
+            else:
+                ser.write(buildSteering(STEERING_ID, 0x1, emergency_reset, emergency, current_heading))
+                ser.write(buildThrottleBraking(THROTTLE_BRAKE_ID, 0x1, emergency_reset, emergency, current_throttle_switch, current_brake_switch, current_throttle_pwm, current_brake_pwm))
             print('m Pressed')
 
         elif key.char == '1':              # Internally update Throttle Values

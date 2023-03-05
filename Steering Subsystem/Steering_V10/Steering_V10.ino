@@ -23,7 +23,6 @@ void loop() {
     EMGaction();
   }
   else {
-    
     decideAction();//Decide what the next set of ouputs should be
   }
   

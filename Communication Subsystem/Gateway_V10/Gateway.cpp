@@ -24,10 +24,17 @@ EthernetUDP Udp2;                                           // An EthernetUDP in
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-char steering_packet[UDP_TX_PACKET_MAX_SIZE] = "";          // Used for incoming messages from the Steering subsystem
-char steering_buffer[UDP_TX_PACKET_MAX_SIZE] = "";          // Used for outgoing messages to the Steering subsystem
-char throttle_braking_packet[UDP_TX_PACKET_MAX_SIZE] = "";  // Used for incoming messages from the Throttle / Braking subsystem
-char throttle_braking_buffer[UDP_TX_PACKET_MAX_SIZE] = "";  // Used for outgoing messages to the Throttle / Braking subsystem
+const int MESSAGE_LENGTH = 20; // Length of the entire serial message coming in **** If the full message is not being read, increase this value ****
+const int STEERING_PACKET_LENGTH = 5;
+const int THROTTLE_BRAKING_PACKET_LENGTH = 6;
+
+char steering_packet[STEERING_PACKET_LENGTH+1] = "";          // Used for incoming messages from the Steering subsystem
+char previous_steering_packet[STEERING_PACKET_LENGTH+1] = "";
+char steering_buffer[24] = "";          // Used for outgoing messages to the Steering subsystem
+
+char throttle_braking_packet[THROTTLE_BRAKING_PACKET_LENGTH+1] = "";  // Used for incoming messages from the Throttle / Braking subsystem
+char previous_throttle_braking_packet[THROTTLE_BRAKING_PACKET_LENGTH+1] = "";
+char throttle_braking_buffer[24] = "";  // Used for outgoing messages to the Throttle / Braking subsystem
 
 
 ////////clears the SIR registers so another interrupt can be triggered////////////////////////////////////////////////////////////////////
@@ -139,7 +146,7 @@ void readEthernet() {
 
       if (memcmp(Udp1.remoteIP(), steering_ip, UDP_TX_PACKET_MAX_SIZE)) {  //if the IP address matches the steering subsystem save it there
         Udp1.read(steering_buffer, UDP_TX_PACKET_MAX_SIZE);
-        Serial.println(steering_buffer);  // ********** Need to add a process to sort this to several char arrays that holds 8 chars each then converts to unsigned longs to go to ints
+        //Serial.println(steering_buffer);  // ********** Need to add a process to sort this to several char arrays that holds 8 chars each then converts to unsigned longs to go to ints
 
         //mode_select = (recieved >> MODE_SELECT_SHIFT) & MASK_1;         // Parse recieved[0] for mode_select
         //EMG_reset = (recieved >> EMG_RESET_SHIFT) & MASK_1;             // Parse recieved[1] for EMG_reset
@@ -149,7 +156,7 @@ void readEthernet() {
     if (packetSize2) {
       if (memcmp(Udp2.remoteIP(), throttle_braking_ip, 4)) {  //if the IP address matches the throttle/braking subsystem save it there
         Udp2.read(throttle_braking_buffer, UDP_TX_PACKET_MAX_SIZE);
-        Serial.println(throttle_braking_buffer);  // ********** Need to add a process to sort this to several char arrays that holds 8 chars each then converts to unsigned longs to go to ints
+        //Serial.println(throttle_braking_buffer);  // ********** Need to add a process to sort this to several char arrays that holds 8 chars each then converts to unsigned longs to go to ints
 
         //mode_select = (recieved >> MODE_SELECT_SHIFT) & MASK_1;         // Parse recieved[0] for mode_select
         //EMG_reset = (recieved >> EMG_RESET_SHIFT) & MASK_1;             // Parse recieved[1] for EMG_reset
@@ -179,9 +186,16 @@ void sendEthernet() {
   Udp1.beginPacket(steering_ip, port1);
   Udp2.beginPacket(throttle_braking_ip, port2);
 
-  Udp1.write(steering_packet);
-  Udp2.write(throttle_braking_packet);
-
+  if(previous_steering_packet != steering_packet) {
+    Udp1.write(steering_packet);
+    Serial.println(".");
+    strcpy(previous_steering_packet, steering_packet);
+  }
+  if(previous_throttle_braking_packet != throttle_braking_packet) {
+    Udp2.write(throttle_braking_packet);
+    Serial.println("_");
+    strcpy(previous_throttle_braking_packet, throttle_braking_packet);
+  } 
   Udp1.endPacket();
   Udp2.endPacket();
 }
@@ -192,110 +206,56 @@ void sendEthernet() {
 //[Target Heading(16 bits), Empty(2 bit), Emergency Reset(1 bit), Mode Select(1 bit)]
 
 void serialHandle() {
-  int i = 0;
-  char incoming[24];
-  char data[8];
-  char null_data[8] = {};
-  char id_str[2];
-  int id = 0;
-  int used_chars = 0;
-  int length = 0;
+  char id = "";
+  char input[200] = {};
+  int current_char = 0;
 
-  while (Serial.available()) {
-    incoming[length] = Serial.read();
-    length++;
+  int available_bytes = Serial.available();
+///////////////////////////////////////////
+  if (!available_bytes) return;
+  delay(MESSAGE_LENGTH);
+///////////////////////////////////////////
+  available_bytes = Serial.available();
+  Serial.print("available_bytes: ");
+  Serial.println(available_bytes);
+
+  for (int i = 0; i < available_bytes; i++) {
+    input[i] = Serial.read();
   }
+  Serial.print("Packet: ");
+  Serial.println(input);
+//////////////////////////////////////////ws
+  while (current_char < available_bytes) {
+    id = input[current_char];
+    current_char++;
+    
+    Serial.print("ID: ");
+    Serial.println(id);
 
-  while (used_chars < length) {
-    id_str[used_chars] = incoming[used_chars];
-    id = strtoul(id_str, NULL, 16);
-
-    if (id == 0) {  //steering
-      strcpy(null_data, data);
-      for (i = used_chars; i < used_chars + 5; i++) {
-        data[i - used_chars] = incoming[i];
+    if (id == '0') {  //Steering
+      for (int i = current_char; i < current_char + STEERING_PACKET_LENGTH; i++) {
+        steering_packet[i - current_char] = input[i];
       }
-      used_chars = used_chars + 5;
-      strcpy(data, steering_packet);
+      current_char += STEERING_PACKET_LENGTH;  //number of characters in the message
+      Serial.print("Steering Packet: ");
+      Serial.println(steering_packet);
     }
 
-    if (id == 1) {  // Throttle Braking
-      strcpy(null_data, data);
-      for (i = used_chars; i < used_chars + 6; i++) {
-        data[i - used_chars] = incoming[i];
+    else if (id == '1') {  //Throttle Braking
+      for (int i = current_char; i < current_char + THROTTLE_BRAKING_PACKET_LENGTH; i++) {
+        throttle_braking_packet[i - current_char] = input[i];
       }
-      used_chars = used_chars + 6;
-      strcpy(data, throttle_braking_packet);
+      current_char += THROTTLE_BRAKING_PACKET_LENGTH;  //number of characters in the message
+      Serial.print("Throttle Braking Packet: ");
+      Serial.println(throttle_braking_packet);
     }
+
+    else Serial.println("Error! ID not recognized...");
   }
   sendEthernet();
 }
 
 
-char wtb[6] = { "0"
-                "0"
-                "0"
-                "8"
-                "3"
-                "B" };
-//char wtb[6] = { "0" "0" "0" "F" "1" "B" };
-//char wtb[6] = { "0" "0" "1" "9" "1" "B" };
-
-char adtb[6] = { "0"
-                 "0"
-                 "0"
-                 "8"
-                 "3"
-                 "B" };
-//char adtb[6] = { "0" "0" "0" "A" "1" "B" };
-//char adtb[6] = { "0" "0" "0" "F" "1" "B" };
-
-char qetb[6] = { "0"
-                 "0"
-                 "0"
-                 "8"
-                 "3"
-                 "B" };
-//char qetb[6] = "000C9B";
-//char qetb[6] = "0012DB";
-
-char stb[6] = { "1"
-                "F"
-                "E"
-                "0"
-                "0"
-                "3" };
-
-char ss[5] = { "0"
-               "0"
-               "0"
-               "0"
-               "3" };
-char ws[5] = { "0"
-               "0"
-               "0"
-               "0"
-               "3" };
-char as[5] = { "7"
-               "D"
-               "1"
-               "2"
-               "3" };
-char ds[5] = { "0"
-               "2"
-               "E"
-               "E"
-               "3" };
-char qs[5] = { "7"
-               "E"
-               "8"
-               "9"
-               "3" };
-char es[5] = { "0"
-               "1"
-               "7"
-               "7"
-               "3" };
 
 
 void debug() {
@@ -304,24 +264,44 @@ void debug() {
     char x = Serial.read();
 
     if (x == 's') {
-      strcpy(ss, steering_packet);
-      strcpy(stb, throttle_braking_packet);
+      strcpy(steering_packet, "00003");
+      strcpy(throttle_braking_packet, "1FE003");
     } else if (x == 'w') {
-      //strcpy(ws,steering_packet);
+      strcpy(steering_packet, "00003");
       strcpy(throttle_braking_packet, "00083B");
     } else if (x == 'a') {
-      strcpy(as, steering_packet);
-      strcpy(adtb, throttle_braking_packet);
+      strcpy(steering_packet, "7D123");
+      strcpy(throttle_braking_packet, "00083B");
     } else if (x == 'd') {
-      strcpy(ds, steering_packet);
-      strcpy(adtb, throttle_braking_packet);
+      strcpy(steering_packet, "02EE3");
+      strcpy(throttle_braking_packet, "00083B");
     } else if (x == 'e') {
-      strcpy(es, steering_packet);
-      strcpy(qetb, throttle_braking_packet);
+      strcpy(steering_packet, "01773");
+      strcpy(throttle_braking_packet, "00083B");
     } else if (x == 'q') {
-      strcpy(qs, steering_packet);
-      strcpy(qetb, throttle_braking_packet);
+      strcpy(steering_packet, "7E893");
+      strcpy(throttle_braking_packet, "00083B");
     }
     sendEthernet();
   }
+//char wtb[6] = { "00083B" };
+//char wtb[6] = { "000F1B" };
+//char wtb[6] = { "00191B" };
+
+//char adtb[6] = { "00083B" };
+//char adtb[6] = { "000A1B" };
+//char adtb[6] = { "000F1B" };
+
+//char qetb[6] = { "00083B" };
+//char qetb[6] = "000C9B";
+//char qetb[6] = "0012DB";
+
+//char stb[6] = { "1FE003" };
+
+//char ss[5] = { "00003" };
+//char ws[5] = { "00003" };
+//char as[5] = { "7D123" };
+//char ds[5] = { "02EE3" };
+//char qs[5] = { "7E893" };
+//char es[5] = { "01773" };
 }
