@@ -22,10 +22,11 @@ const int ETHERNET_INT = 2;           // Ethernet shield interrupt pin on INT0
 ///////// Define a variety of constants that will be used in the logic of the code /////////////////////////////
 
 
-const int V0_5 = 25;                         // The PWM signal required for 0.5 Volts
-const int V4_5 = 225;                        // The PWM signal required for 4.5 Volts
+const int V0_5 = 25;                         // The PWM value required for 0.5 Volts
+const int V4_5 = 225;                        // The PWM Value required for 4.5 Volts
+const int MIN_THROTTLE_VALUE = 65;           // Minimum PWM value for the golf cart to start moving
 const int THROTTLE_ACCELERATION_PERIOD = 10; // Throttle Acceleration Period, time in [mS] before the throttle can increment up
-const int THROTTLE_DECELERATION_PERIOD = 5;  // Throttle Decceleration Period, time in [mS] before the throttle can increment down
+const int THROTTLE_DECELERATION_PERIOD = 1;  // Throttle Decceleration Period, time in [mS] before the throttle can increment down
 const int BRAKE_ACCELERATION_PERIOD = 15;    // Brake Acceleration period, time in [mS] before the brake can increment up
 const int FEEDBACK_PERIOD = 1000;            // Amount of time in [mS] between feedback messages
 
@@ -125,6 +126,12 @@ int acc(int reference, unsigned long period, int increment) {   // Takes in refe
   if ((current_time - previous_acc) > period) {                 // If the period it has been waiting is greater than the period specified,
     reference = reference + increment;                          // Increment the reference variable
     previous_acc = current_time;                                // Update previous time with the last time the variable was incremented
+  }
+  if(reference < MIN_THROTTLE_VALUE && increment == 1){
+    reference = MIN_THROTTLE_VALUE;
+  }
+  else if(reference < MIN_THROTTLE_VALUE && increment == -1){
+    reference = V0_5;
   }
   return reference;                                             // Return the reference variable
 }
@@ -246,31 +253,18 @@ void readEthernet() {
     if (target_brake_pwm < V0_5) {              // Check Low side target_brake_pwm
       target_brake_pwm = V0_5;
     }
-    if (current_brake_pwm < V0_5) {             // Check Low side current_brake_pwm
-      current_brake_pwm = V0_5;
-    }
     /////////////////////////////
     if (target_throttle_pwm < V0_5) {           // Check Low side target_throttle_pwm
       target_throttle_pwm = V0_5;
-    }
-    if (current_throttle_pwm < V0_5) {          // Check Low side current_throttle_pwm
-      current_throttle_pwm = V0_5;
     }
     ////////////////////////////
     if (target_brake_pwm > V4_5) {              // Check High side target_brake_pwm
       target_brake_pwm = V4_5;
     }
-    if (current_brake_pwm > V4_5) {             // Check High side current_brake_pwm
-      current_brake_pwm = V4_5;
-    }
     //////////////////////////////
     if (target_throttle_pwm > V4_5) {           // Check High side target_throttle_pwm
       target_throttle_pwm = V4_5;
     }
-    if (current_throttle_pwm > V4_5) {
-      current_throttle_pwm = V4_5;              // Check High side current_throttle_pwm
-    }
-
     if(EMG_reset){                              // If the emergency reset bit is high, reset the EMG variable
       EMG = false;
       EMG_reset = false;
@@ -375,6 +369,12 @@ void decideAction() {
 
 
 void updateOutput() {
+      if (current_throttle_pwm < V0_5) {          // Check Low side current_throttle_pwm
+      current_throttle_pwm = V0_5;
+    }
+        if (current_brake_pwm < V0_5) {             // Check Low side current_brake_pwm
+      current_brake_pwm = V0_5;
+    }
   analogWrite(BRAKE_PWM_OUTPUT, current_brake_pwm);
   analogWrite(THROTTLE_PWM_OUTPUT, current_throttle_pwm);
   digitalWrite(BRAKE_SWITCH_OUTPUT, current_brake_switch);
@@ -444,7 +444,7 @@ void debug() {/*
   Serial.print("  ");
   Serial.print("Emergency Reset: ");
   Serial.print(EMG_reset);
-  Serial.print("  ");*/
+  Serial.print("  ");
   Serial.print("Target Throttle pwm / Switch: ");
   Serial.print(target_throttle_pwm);
   Serial.print("  ");
@@ -453,8 +453,8 @@ void debug() {/*
   Serial.print("Target Brake pwm / Switch: ");
   Serial.print(target_brake_pwm);
   Serial.print("  ");
-  Serial.print(target_brake_switch);
-  Serial.print("  ");
+  Serial.println(target_brake_switch);*/
+  //Serial.print("  ");
   Serial.print("Current Throttle pwm / Switch: ");
   Serial.print(current_throttle_pwm);
   Serial.print("  ");

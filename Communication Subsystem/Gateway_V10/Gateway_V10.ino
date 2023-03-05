@@ -10,8 +10,8 @@ void setup() {
 
 
 void loop() {
-  //wdt_reset();
-  //serialHandle();
-  debug();
+  wdt_reset();
+  serialHandle();
+ // debug();
   readEthernet();
 }

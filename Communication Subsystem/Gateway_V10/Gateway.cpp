@@ -30,11 +30,11 @@ const int THROTTLE_BRAKING_PACKET_LENGTH = 6;
 
 char steering_packet[STEERING_PACKET_LENGTH+1] = "";          // Used for incoming messages from the Steering subsystem
 char previous_steering_packet[STEERING_PACKET_LENGTH+1] = "";
-char steering_buffer[STEERING_PACKET_LENGTH+1] = "";          // Used for outgoing messages to the Steering subsystem
+char steering_buffer[24] = "";          // Used for outgoing messages to the Steering subsystem
 
-char throttle_braking_packet[THROTTLE_BRAKING_PACKET_LENGTH] = "";  // Used for incoming messages from the Throttle / Braking subsystem
-char previous_throttle_braking_packet[THROTTLE_BRAKING_PACKET_LENGTH] = "";
-char throttle_braking_buffer[THROTTLE_BRAKING_PACKET_LENGTH] = "";  // Used for outgoing messages to the Throttle / Braking subsystem
+char throttle_braking_packet[THROTTLE_BRAKING_PACKET_LENGTH+1] = "";  // Used for incoming messages from the Throttle / Braking subsystem
+char previous_throttle_braking_packet[THROTTLE_BRAKING_PACKET_LENGTH+1] = "";
+char throttle_braking_buffer[24] = "";  // Used for outgoing messages to the Throttle / Braking subsystem
 
 
 ////////clears the SIR registers so another interrupt can be triggered////////////////////////////////////////////////////////////////////
@@ -146,7 +146,7 @@ void readEthernet() {
 
       if (memcmp(Udp1.remoteIP(), steering_ip, UDP_TX_PACKET_MAX_SIZE)) {  //if the IP address matches the steering subsystem save it there
         Udp1.read(steering_buffer, UDP_TX_PACKET_MAX_SIZE);
-        Serial.println(steering_buffer);  // ********** Need to add a process to sort this to several char arrays that holds 8 chars each then converts to unsigned longs to go to ints
+        //Serial.println(steering_buffer);  // ********** Need to add a process to sort this to several char arrays that holds 8 chars each then converts to unsigned longs to go to ints
 
         //mode_select = (recieved >> MODE_SELECT_SHIFT) & MASK_1;         // Parse recieved[0] for mode_select
         //EMG_reset = (recieved >> EMG_RESET_SHIFT) & MASK_1;             // Parse recieved[1] for EMG_reset
@@ -156,7 +156,7 @@ void readEthernet() {
     if (packetSize2) {
       if (memcmp(Udp2.remoteIP(), throttle_braking_ip, 4)) {  //if the IP address matches the throttle/braking subsystem save it there
         Udp2.read(throttle_braking_buffer, UDP_TX_PACKET_MAX_SIZE);
-        Serial.println(throttle_braking_buffer);  // ********** Need to add a process to sort this to several char arrays that holds 8 chars each then converts to unsigned longs to go to ints
+        //Serial.println(throttle_braking_buffer);  // ********** Need to add a process to sort this to several char arrays that holds 8 chars each then converts to unsigned longs to go to ints
 
         //mode_select = (recieved >> MODE_SELECT_SHIFT) & MASK_1;         // Parse recieved[0] for mode_select
         //EMG_reset = (recieved >> EMG_RESET_SHIFT) & MASK_1;             // Parse recieved[1] for EMG_reset
@@ -188,12 +188,12 @@ void sendEthernet() {
 
   if(previous_steering_packet != steering_packet) {
     Udp1.write(steering_packet);
-    Serial.println(".")
+    Serial.println(".");
     strcpy(previous_steering_packet, steering_packet);
   }
   if(previous_throttle_braking_packet != throttle_braking_packet) {
     Udp2.write(throttle_braking_packet);
-    Serial.println("_")
+    Serial.println("_");
     strcpy(previous_throttle_braking_packet, throttle_braking_packet);
   } 
   Udp1.endPacket();
@@ -223,12 +223,11 @@ void serialHandle() {
     input[i] = Serial.read();
   }
   Serial.print("Packet: ");
-  Serial.print(input);
-//////////////////////////////////////////
+  Serial.println(input);
+//////////////////////////////////////////ws
   while (current_char < available_bytes) {
     id = input[current_char];
     current_char++;
-    if(id == "") continue;
     
     Serial.print("ID: ");
     Serial.println(id);
