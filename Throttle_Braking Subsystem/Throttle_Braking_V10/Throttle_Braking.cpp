@@ -11,9 +11,9 @@ const int BRAKE_SWITCH_INPUT = 3;     // Manual Brake Switch
 const int BRAKE_SENSOR_INPUT = A0;    // Manual Brake Sensor
 const int THROTTLE_SWITCH_INPUT = 8;  // Manual Throttle Switch
 const int THROTTLE_SENSOR_INPUT = A1; // Manual Throttle Sensor
-const int BRAKE_SWITCH_OUTPUT = 6;    // Automated Brake Switch
+const int BRAKE_SWITCH_OUTPUT = 4;    // Automated Brake Switch
 const int BRAKE_PWM_OUTPUT = 5;       // Automated Brake Sensor
-const int THROTTLE_SWITCH_OUTPUT = 4; // Automated Throttle Switch
+const int THROTTLE_SWITCH_OUTPUT = 6; // Automated Throttle Switch
 const int THROTTLE_PWM_OUTPUT = 9;    // Automated Throttl Sensor
 const int RELAY_OUTPUT = 7;           // Digital output to control the mode of the system
 const int ETHERNET_INT = 2;           // Ethernet shield interrupt pin on INT0
@@ -25,9 +25,9 @@ const int ETHERNET_INT = 2;           // Ethernet shield interrupt pin on INT0
 const int V0_5 = 25;                         // The PWM value required for 0.5 Volts
 const int V4_5 = 225;                        // The PWM Value required for 4.5 Volts
 const int MIN_THROTTLE_VALUE = 65;           // Minimum PWM value for the golf cart to start moving
-const int THROTTLE_ACCELERATION_PERIOD = 10; // Throttle Acceleration Period, time in [mS] before the throttle can increment up
-const int THROTTLE_DECELERATION_PERIOD = 1;  // Throttle Decceleration Period, time in [mS] before the throttle can increment down
-const int BRAKE_ACCELERATION_PERIOD = 15;    // Brake Acceleration period, time in [mS] before the brake can increment up
+const int THROTTLE_ACCELERATION_PERIOD = 130; // Throttle Acceleration Period, time in [mS] before the throttle can increment up
+const int THROTTLE_DECELERATION_PERIOD = 30;  // Throttle Decceleration Period, time in [mS] before the throttle can increment down
+const int BRAKE_ACCELERATION_PERIOD = 60;    // Brake Acceleration period, time in [mS] before the brake can increment up
 const int FEEDBACK_PERIOD = 1000;            // Amount of time in [mS] between feedback messages
 
 
@@ -377,7 +377,7 @@ void updateOutput() {
     }
   analogWrite(BRAKE_PWM_OUTPUT, current_brake_pwm);
   analogWrite(THROTTLE_PWM_OUTPUT, current_throttle_pwm);
-  digitalWrite(BRAKE_SWITCH_OUTPUT, current_brake_switch);
+  digitalWrite(BRAKE_SWITCH_OUTPUT, !current_brake_switch);
   digitalWrite(THROTTLE_SWITCH_OUTPUT, current_throttle_switch);
 }
 
@@ -438,7 +438,7 @@ void feedback() {
 ///////// Function used to print important values to the serial monitor for the purpose of debugging /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void debug() {/*
+void debug() {
   Serial.print("Mode Select: ");
   Serial.print(mode_select);
   Serial.print("  ");
@@ -453,8 +453,8 @@ void debug() {/*
   Serial.print("Target Brake pwm / Switch: ");
   Serial.print(target_brake_pwm);
   Serial.print("  ");
-  Serial.println(target_brake_switch);*/
-  //Serial.print("  ");
+  Serial.print(target_brake_switch);
+  Serial.print("  ");
   Serial.print("Current Throttle pwm / Switch: ");
   Serial.print(current_throttle_pwm);
   Serial.print("  ");
