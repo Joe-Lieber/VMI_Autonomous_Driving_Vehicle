@@ -9,7 +9,7 @@
 //Torque sensor
 const int TORQUE_A = A0;     // Input A for the built in torque sensor of Super ATV Power steering
 const int TORQUE_B = A1;     // Input A for the built in torque sensor of Super ATV Power steering
-const int MAX_TORQUE = 800;  // The threshold for the difference of the two torque value before EMG is thrown
+const int MAX_TORQUE = 700;  // The threshold for the difference of the two torque value before EMG is thrown
 const int POWER_STEERING_THRESHOLD = 200; // The threshold to overcome when using the power steering functionality
 // Encoder Values
 const int ENCODER_CS = 7;         // Chip Select for encoder
@@ -218,6 +218,7 @@ void initializeInterrupt() {
 
 void readEthernet() {
   if (ethernet_flag) {  // If the Ethernet Flag has been set by an interrupt,
+    Serial.print("Message Recieved");
     disableSIRs();      // Disable interrupts so that data is not corrupted while reading and writing the variables below
 
     unsigned long recieved;                      // Define a long to hold the binary form sent in the UDP packet
@@ -243,8 +244,6 @@ void readEthernet() {
       EMG_reset = (recieved >> EMG_RESET_SHIFT) & MASK_1;             // Parse recieved[1] for EMG_reset
       EMG |= (recieved >> EMG_SHIFT) & MASK_1;                        // Parse recieved[2] for EMG
       target_heading = (recieved >> TARGET_HEADING_SHIFT) & MASK_16;  // Parse recieved[3:18] for target_heading
-      Serial.print("message recieved, Target heading = ");
-      Serial.println(target_heading);
     }
 
     if (target_heading > current_heading) {
@@ -275,6 +274,7 @@ void readSensors() {
   torque_b = analogRead(TORQUE_B);                                                              // Read the input pin of Torque sensor B
   if ((torque_a - torque_b > MAX_TORQUE || torque_b - torque_a > MAX_TORQUE) && mode_select) {  // If the difference of the values is larger than the threshold
     EMG = true;                                                                                 // Set the Emergency stop flag
+    Serial.println("I am in an emergency");
   }
 
   //READ BOURNS ENCODER
@@ -426,12 +426,12 @@ void debug() {  // Provide feedback to the executive processor about the
   //  Serial.print(",");
   //  Serial.print(mode_select);
   //  Serial.print(",");
-    Serial.print(EMG);
-    Serial.print("    ");
+    // Serial.print(EMG);
+    // Serial.print("    ");
   //  Serial.print(EMG_reset);
   //  Serial.print(",");
-    Serial.print(target_heading);
-    Serial.print("    ");
+    // Serial.print(target_heading);
+    // Serial.print("    ");
     Serial.println(current_heading);
   //  Serial.print(",");
   //  Serial.print(mid_point);
