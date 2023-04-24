@@ -30,5 +30,5 @@ void loop() {
 
   feedback();//Feedback message for the server
 
-  debug();// Serial print important values
+  //debug();// Serial print important values
 }

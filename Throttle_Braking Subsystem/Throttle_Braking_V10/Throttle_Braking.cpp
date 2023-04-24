@@ -153,7 +153,7 @@ void setEMG() {
 
 void initialize() {
   Serial.begin(9600);
-  Serial.println("Initializing....");
+  //Serial.println("Initializing....");
   wdt_enable(WDTO_1S);                    // Eneable the watchdog timer to execute an interrupt if it reaches 1 second
   pinMode(BRAKE_SWITCH_INPUT, INPUT);     //input from Brake Sensor
   pinMode(THROTTLE_SWITCH_INPUT, INPUT);  //input from Throttle Sensor
@@ -174,18 +174,18 @@ void initializeEthernet() {
 
   Ethernet.init(10);                                              // You can use Ethernet.init(pin) to configure the CS pin. Most Arduino shields use pin 10
 
-  Serial.println("Ethernet Initializing....");                    // Print that the Ethernet connection is starting
+  //Serial.println("Ethernet Initializing....");                    // Print that the Ethernet connection is starting
   Ethernet.begin(mac, ip);                                        // Begin ethernet connection
 
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {          // Check for Ethernet hardware being present
-    Serial.println("Ethernet shield was not found.");             // If it is missing, print to serial monitor
+    //Serial.println("Ethernet shield was not found.");             // If it is missing, print to serial monitor
     while (Ethernet.hardwareStatus() == EthernetNoHardware) {     // While the Hardware is missing
       delay(1000);                                                // wait for 1 second
       Serial.print(".");                                          // and print a dot to the serial monitor
     }
   }
   if (Ethernet.linkStatus() == LinkOFF) {                         // Check to see if there is a physical connection to the network
-    Serial.println("Ethernet cable is not connected.");           // if there is not then print it to the serial monitor
+    //Serial.println("Ethernet cable is not connected.");           // if there is not then print it to the serial monitor
     while (Ethernet.linkStatus() == LinkOFF) {                    // while there is no connection
       delay(1000);                                                // wait for 1 second
       Serial.print(".");                                          // and print a dot to the serial monitor
@@ -193,7 +193,7 @@ void initializeEthernet() {
   }
   Udp.begin(localPort);                                           // start the UDP connection on the port declared
 
-  Serial.println("Ethernet Initialized");                         // print to the serial monitor that the ethernet is done initializing
+  //Serial.println("Ethernet Initialized");                         // print to the serial monitor that the ethernet is done initializing
 }
 
 
@@ -201,7 +201,7 @@ void initializeEthernet() {
 
 
 void initializeInterrupt() {
-  Serial.println("Initializing Interrupts....");                                // Print to the serial monitor that the interrupts are being initialized
+  //Serial.println("Initializing Interrupts....");                                // Print to the serial monitor that the interrupts are being initialized
 
   pinMode(ETHERNET_INT, INPUT);                                                 // set the interrupt for the ethernet shield as an input
   attachInterrupt(digitalPinToInterrupt(ETHERNET_INT), ethernetFlag, FALLING);  // set the ethernet shield pin as an interrupt triggered on the falling edge and assign the function ethernetFlag as the ISR
@@ -214,7 +214,7 @@ void initializeInterrupt() {
   }
   enableSIRs();                                                                 // Enable ethernet interrupts
 
-  Serial.println("Interrupts Initialized");                                     // Print to the serial monitor that the interrupts are initialized
+  //Serial.println("Interrupts Initialized");                                     // Print to the serial monitor that the interrupts are initialized
 }
 
 
