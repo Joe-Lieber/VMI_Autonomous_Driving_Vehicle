@@ -7,10 +7,10 @@
 /////////Define all of the pins for the I/O of the system/////////////////////
 
 //Torque sensor
-const int TORQUE_A = A0;     // Input A for the built in torque sensor of Super ATV Power steering
-const int TORQUE_B = A1;     // Input A for the built in torque sensor of Super ATV Power steering
-const int MAX_TORQUE = 700;  // The threshold for the difference of the two torque value before EMG is thrown
-const int POWER_STEERING_THRESHOLD = 200; // The threshold to overcome when using the power steering functionality
+const int TORQUE_A = A0;                   // Input A for the built in torque sensor of Super ATV Power steering
+const int TORQUE_B = A1;                   // Input A for the built in torque sensor of Super ATV Power steering
+const int MAX_TORQUE = 700;                // The threshold for the difference of the two torque value before EMG is thrown
+const int POWER_STEERING_THRESHOLD = 200;  // The threshold to overcome when using the power steering functionality
 // Encoder Values
 const int ENCODER_CS = 7;         // Chip Select for encoder
 const int ENCODER_CLK = 5;        // Artificial clock signal for encoder
@@ -21,8 +21,8 @@ const int DIRECTION = 8;          // Digital direction output for PWM Motor Cont
 const int PWM = 9;                // PWM output for PWM Motor Controller
 const int OVER_CURRENT = 3;       // Over Current LED on PWM motor controller we taped into
 const int ADJUSTMENT_SPEED = 35;  // The minimum PWM value sent to the motor
-const int max_speed = 240;        // The max PWM value that can be ouput to the PWM Motor controller
-const bool direction_bit = 0;     // ******* If the wheel is turning opposite of desired set to the logic opposite
+const int MAX_SPEED = 240;        // The max PWM value that can be ouput to the PWM Motor controller
+const bool DIRECTION_BIT = 0;     // ******* If the wheel is turning opposite of desired set to the logic opposite
 //Ethernet
 const int ETHERNET_INT = 2;  // Ethernet shield interrupt pin on INT0
 //Timers
@@ -45,33 +45,43 @@ const int MASK_16 = 0xFFFF;  // Mask for 16 bit variables
 ////////////////// Declare major Logic variables////////////////////////////////////
 
 // Variables assigned by ethernet
-bool mode_select = false;  // Logic bit that controls the current mode of the system (Manual / Automated)
-bool EMG_reset = false;    // Flag to tell the system to reset the emergency stop state
-int target_heading = 0;    // Desired state of the heading of the steering wheel (initialized to 512 / Center)
+bool mode_select = false;   // Logic bit that controls the current mode of the system (Manual / Automated)
+volatile bool EMG = false;  // Logic for the emergency stop state
+bool EMG_reset = false;     // Flag to tell the system to reset the emergency stop state
+int target_heading = 0;     // Desired state of the heading of the steering wheel (initialized to 512 / Center)
 
 // Current Automated State
-int current_heading = 0;        // Current state of the heading of the steering wheel (initialized to 512 / Center)
-int old_current_heading = 512;  // Used to track zero crosses with Encoder
-int revolutions = 0;            // Keeps track of how many revolutions was made by the encoder
-int current_speed = 0;          // Current value of the speed of the steering motor
-bool current_direction = 0;     // State variable to determine what direction the steering motor
-
-// Calculated Values
-int mid_point = 0;  // A value calculated that is between the current and target value
-int offset = 0;     // An offset from the midpoint the scales based on the difference between current and target heading
+int current_heading = 0;         // Current state of the heading of the steering wheel (initialized to 512 / Center)
+int old_current_heading = 512;   // Used to track zero crosses with Encoder
+int revolutions = 0;             // Keeps track of how many revolutions was made by the encoder
+int current_speed = 0;           // Current value of the speed of the steering motor
+bool current_direction = false;  // State variable to determine what direction the steering motor
 
 // Torque sensor Values
 int expected_torque = 0;  // Threshold for the difference between torque A and B to cause a safety infraction
 int torque_a = 512;       // Value read from torque sensor
 int torque_b = 512;       // Value read from torque sensor
 
-// Logic Variables
-int wiggle_room = 1;        // How far from the target the current value can be without correcting
-volatile bool EMG = false;  // State variable to indicate possible safety violation
 
-// acceration Variables
-unsigned long previous_acc = 0;       // Variable to keep track of the last time the ouput was incremented
+// Time Variables
 unsigned long previous_feedback = 0;  // Variable to keep track of the last time feedback was sent
+int old_millis = 0;
+const int ACTION_PERIOD = 50;
+
+// PID Variables
+const float Kp = 0.6;   // Proportional gain
+const float Ki = 0.05;  // Integral gain
+const float Kd = 0.2;   // Derivative gain
+
+int error = 0;       // Difference between target_heading and current_heading
+int last_error = 0;  // Previous error
+int integral = 0;    // Sum of errors over time
+int derivative = 0;  // Rate of change of error
+
+const int INTEGRAL_LIMIT = 2000;
+const int DERIVATIVE_LIMIT = 1000;
+
+
 
 
 ///////// Declare everything needed for Ethernet /////////////////////////////////////////////////////////////////////////////////////////
@@ -112,23 +122,6 @@ inline void enableSIRs() {
 
 void ethernetFlag() {
   ethernet_flag = true;
-}
-
-
-///////// Function that regulates the rate at which a value will increment to meet our performance criteria //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-int acc(int reference, int increment) {  // Takes in reference variable, the period it must wait to be incrimented in milli seconds, and how much to increment it by
-
-  unsigned long current_time = millis();  // Set the current time in milliseconds using the arduino function millis();
-
-  if ((current_time - previous_acc > TURN_PERIOD) && (reference < max_speed)) {  // If the period it has been waiting is greater than the period specified,
-    reference += increment;                                                      // Increment the reference variable
-    previous_acc = current_time;                                                 // Update previous time with the last time the variable was incremented
-  }
-  if (reference < ADJUSTMENT_SPEED) reference = ADJUSTMENT_SPEED;  // If it is trying to increment below the minimum speed for the motor to turn, keep it at ADJUSJUSTMENT_SPEED
-
-  return reference;  // Return the reference variable
 }
 
 
@@ -219,7 +212,7 @@ void initializeInterrupt() {
 void readEthernet() {
   if (ethernet_flag) {  // If the Ethernet Flag has been set by an interrupt,
     Serial.print("Message Recieved");
-    disableSIRs();      // Disable interrupts so that data is not corrupted while reading and writing the variables below
+    disableSIRs();  // Disable interrupts so that data is not corrupted while reading and writing the variables below
 
     unsigned long recieved;                      // Define a long to hold the binary form sent in the UDP packet
     char incoming[UDP_TX_PACKET_MAX_SIZE] = "";  // Define a local variable to hold the string of bits sent
@@ -244,14 +237,6 @@ void readEthernet() {
       EMG_reset = (recieved >> EMG_RESET_SHIFT) & MASK_1;             // Parse recieved[1] for EMG_reset
       EMG |= (recieved >> EMG_SHIFT) & MASK_1;                        // Parse recieved[2] for EMG
       target_heading = (recieved >> TARGET_HEADING_SHIFT) & MASK_16;  // Parse recieved[3:18] for target_heading
-    }
-
-    if (target_heading > current_heading) {
-      mid_point = current_heading - ((current_heading - target_heading) / 2);  // Calculate the midpoint with the new target
-      offset = (target_heading - current_heading) / 20;                        // Calculate the offset with the new target
-    } else {
-      mid_point = current_heading + ((target_heading - current_heading) / 2);  // Calculate the midpoint with the new target
-      offset = (current_heading - target_heading) / 20;                        // Calculate the offset with the new target
     }
 
     if (EMG_reset) {  // If the emergency reset bit is high, reset the EMG variable
@@ -324,50 +309,51 @@ void EMGaction() {
 
 
 void decideAction() {  // Make a decsion based on the target and current values
-  if (mode_select) {
-    if (current_heading < target_heading - wiggle_room) {
-      wiggle_room = 1;
-      if (current_heading < mid_point - offset) {
-        current_speed = acc(current_speed, 1);
-        current_direction = direction_bit;
-      } else if (current_heading > mid_point + offset) {
-        current_speed = acc(current_speed, -1);
-        current_direction = direction_bit;
-      } else {
-        // Purposefully Blank // In middle gap
-      }
-    }
-    /////////////////////////////////////////////////////////////
-    else if (current_heading > target_heading + wiggle_room) {
-      wiggle_room = 1;
-      if (current_heading > mid_point - offset) {
-        current_speed = acc(current_speed, 1);
-        current_direction = !direction_bit;
-      } else if (current_heading < mid_point + offset) {
-        current_speed = acc(current_speed, -1);
-        current_direction = !direction_bit;
-      } else {
-        // Purposefully Blank // In middle gap
-      }
-    }
-    /////////////////////////////////////////////////////////////
-    else {
-      current_speed = 0;
-      current_direction = 0;
-      wiggle_room = 8;
-    }
-  } else {
-    if (torque_a - torque_b > POWER_STEERING_THRESHOLD) {
-      current_speed = 120;
+  if(!mode_select){
+    if((torque_a - torque_b) > POWER_STEERING_THRESHOLD){
       current_direction = 1;
-    } else if (torque_b - torque_a > POWER_STEERING_THRESHOLD) {
-      current_speed = 120;
-      current_direction = 0;
-    } else {
-      current_speed = 0;
-      current_direction = 0;
+      current_speed = 125;
     }
+    else if(torque_a - torque_b < -POWER_STEERING_THRESHOLD){
+      current_direction = 0;
+      current_speed = 125;
+    }
+    else{
+      current_direction = 0;
+      current_speed = 0;
+    }
+    return;
   }
+  int current_millis = millis();
+  if (current_millis - old_millis < ACTION_PERIOD) return;
+  old_millis = current_millis;
+
+  // Calculate error
+  error = target_heading - current_heading;
+
+  // Calculate integral and derivative terms
+  integral += error;
+  if (integral > INTEGRAL_LIMIT) integral = INTEGRAL_LIMIT;
+  else if (integral < -1 * INTEGRAL_LIMIT) integral = -1 * INTEGRAL_LIMIT;
+  derivative = error - last_error;
+  if (derivative > DERIVATIVE_LIMIT) derivative = DERIVATIVE_LIMIT;
+  else if (derivative < -1 * DERIVATIVE_LIMIT) derivative = -1 * DERIVATIVE_LIMIT;
+  last_error = error;
+
+  // Calculate control current_speed
+  current_speed = Kp * error + Ki * integral + Kd * derivative;
+
+  // Set motor direction
+  if (current_speed > 0) {
+    current_direction = DIRECTION_BIT;
+  } else {
+    current_direction = !DIRECTION_BIT;
+  }
+
+  if (current_speed < 0) current_speed *= -1;
+
+  // Limit current_speed to range 0-255
+  current_speed = constrain(current_speed, 0, MAX_SPEED);
 }
 
 
@@ -422,40 +408,40 @@ void feedback() {
 
 
 void debug() {  // Provide feedback to the executive processor about the
-  //  Serial.print(millis());
-  //  Serial.print(",");
-  //  Serial.print(mode_select);
-  //  Serial.print(",");
-    // Serial.print(EMG);
-    // Serial.print("    ");
-  //  Serial.print(EMG_reset);
-  //  Serial.print(",");
-    // Serial.print(target_heading);
-    // Serial.print("    ");
-    Serial.println(current_heading);
-  //  Serial.print(",");
-  //  Serial.print(mid_point);
-  //  Serial.print(",");
-  //  Serial.print(offset);
-  //  Serial.print(",");
-  //  Serial.print(current_speed);
-  //  Serial.print(",");
-  //  Serial.print(current_direction);
-  //  Serial.print(",");
-  //  Serial.print(torque_a);
-  //  Serial.print(",");
-  //  Serial.print(torque_b);
-  //  Serial.print(",");
-  //  Serial.print(wiggle_room);
-  //  Serial.print(",");
-  //  Serial.print(revolutions);
-  //  Serial.println("");
+  // Serial.print(millis());
+  // Serial.print(",");
+  // Serial.print(mode_select);
+  // Serial.print(",");
+  // Serial.print(EMG);
+  // Serial.print("    ");
+  // Serial.print(EMG_reset);
+  // Serial.print(",");
+  // Serial.print(target_heading);
+  // Serial.print("    ");
+  //Serial.print(current_heading);
+  // Serial.print(",");
+  // Serial.print(error);
+  // Serial.print(",");
+  // Serial.print(integral);
+  // Serial.print(",");
+  // Serial.print(derivative);
+  // Serial.print(",");
+  // Serial.print(current_speed);
+  // Serial.print(",");
+  // Serial.print(current_direction);
+  // Serial.print(",");
+  // Serial.print(torque_a);
+  // Serial.print(",");
+  // Serial.print(torque_b);
+  // Serial.print(",");
+  // Serial.print(revolutions);
+ // Serial.println("");
 
-  /*Serial.print(String(millis()) + ", " + String(mode_select) + ", "
+  Serial.print(String(millis()) + ", " + String(mode_select) + ", "
                + String(EMG) + ", " + String(EMG_reset) + ", " + String(target_heading) + ", "
-               + String(current_heading) + ", " + String(mid_point) + ", " + String(offset)
+               + String(current_heading) + ", " + String(error) + ", " + String(integral) + ", " + String(derivative)
                + ", " + String(current_speed) + ", " + String(current_direction) + ", " + String(torque_a)
-               + ", " + String(torque_b) + ", " + String(wiggle_room) + ", " + String(revolutions));
+               + ", " + String(torque_b) + ", " + String(revolutions));
 
-  Serial.println("");*/
+  Serial.println("");
 }
